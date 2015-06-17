@@ -6,17 +6,15 @@
      */
     $service = new \vsu\authClient(array(
         'service'  => 'test',
-        'url'      => 'https://site.ru',
-        'redirect' => 'https://site.ru/secure'
+        'url'      => 'https://test.ru',
+        'redirect' => 'https://test.ru/secure'
     ));
 
     /**
-     * 1.5. Проверка ответного токена для сбора данных
+     * 4.0. Попытка получения данных по токену
      */
     if(isset($_GET['authToken'])) {
-        /**
-         * 4.0. Попытка получения данных по токену
-         */
+
         if($res = $service->getByToken($_GET['authToken'])) {
             /**
              * 4.5. В случае успеха $res['data'] будет иметь результат
