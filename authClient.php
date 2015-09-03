@@ -1,7 +1,17 @@
 <?php
-    namespace vsu;
+    namespace auth;
 
     class authClient {
+        /**
+         * Адрес сервера аутентификации
+         *
+         * @var string
+         */
+        protected $domain = 'https://auth.vsu.ru';
+        public function domain() {
+            return $this->domain;
+        }
+
         /**
          * Конфигурация сервиса
          *
@@ -9,8 +19,9 @@
          */
         protected $config = array(
             'service'  => '',
-            'url'      => '',
-            'redirect' => ''
+            'secret'   => '',
+            'redirect' => '',
+            'url'      => ''
         );
 
         /**
@@ -29,31 +40,35 @@
          * Ключ     | Пояснение
          * -------- | ----------
          * service  | Имя сервиса, уточняется у администратора
-         * url      | Основной URL сервиса
+         * secret   | Секретный ключ сервиса
          * redirect | Обратная ссылка для редиректа с сервера аутентификации
+         * url      | URL приложения
          *
-         * @param array $config Конфигурация клиентского сераиса
+         * @param array  $config Конфигурация клиентского сераиса
+         * @param string $domain Адрес сервера аутентификации
          *
          * @throws \Exception Если неверно указаны параметры сервиса.
          */
-        public function __construct(array $config) {
+        public function __construct(array $config, $domain = '') {
             $this->config = array_replace_recursive($this->config, $config);
 
             if($this->config['service'] == '' || is_string($this->config['service']) == false) {
                 throw new \Exception('Необходимо указать имя сервиса.');
             }
 
-            if($this->config['url'] == '' || is_string($this->config['url'] == false)) {
-                if($try = self::getCurrentURL(false, true, true)) {
-                    $this->config['url'] = $try;
-                }
-                else {
-                    throw new \Exception('Невозможно определить главный URL.');
-                }
+            if(is_string($this->config['secret'] == false)) {
+                throw new \Exception('Ключ сервиса указан неверно.');
             }
 
             if($this->config['redirect'] == '' || is_string($this->config['redirect'] == false)) {
-                $this->config['redirect'] = $this->config['url'];
+                throw new \Exception('Не указана обратная ссылка.');
+            }
+
+            if($domain && is_string($domain)) {
+                $this->domain = $domain;
+            }
+            elseif($this->domain == null) {
+                throw new \Exception('Не указан адрес сервера аутентификации');
             }
         }
 
@@ -116,7 +131,7 @@
          *
          * @return mixed
          */
-        public static function sendRequest($url, $body = null, $type = 'POST', $agent = 'authVSU') {
+        public static function sendRequest($url, $body = null, $type = 'POST', $agent = 'authClient') {
             if(
                 function_exists('curl_version') &&
                 is_string($url) && is_string($agent) &&
@@ -246,7 +261,7 @@
          */
         public function serverRequest($page, array $data) {
             if(is_string($page) && $page) {
-                $res = self::sendRequest("https://auth.vsu.ru/$page", self::jsonEncode($data), 'POST', 'authClient');
+                $res = self::sendRequest("{$this->domain}/$page", self::jsonEncode($data), 'POST');
 
                 if($res) {
                     return $res;
@@ -282,7 +297,7 @@
          */
         public function authentication($sessionToken) {
             if(is_string($sessionToken) && $sessionToken) {
-                self::redirect('https://auth.vsu.ru/authentication?sessionToken=' . $sessionToken);
+                self::redirect("{$this->domain}/authentication?sessionToken=$sessionToken");
             }
         }
 
