@@ -20,8 +20,7 @@
         protected $config = array(
             'service'  => '',
             'secret'   => '',
-            'redirect' => '',
-            'url'      => ''
+            'redirect' => ''
         );
 
         /**
@@ -42,7 +41,6 @@
          * service  | Имя сервиса, уточняется у администратора
          * secret   | Секретный ключ сервиса
          * redirect | Обратная ссылка для редиректа с сервера аутентификации
-         * url      | URL приложения
          *
          * @param array  $config Конфигурация клиентского сераиса
          * @param string $domain Адрес сервера аутентификации
@@ -291,7 +289,7 @@
          *
          * Редирект на страницу аутентификации для пользователя с токенов временной сессии, полученным из prepareSession.
          *
-         * @param string $sessionToken
+         * @param string $sessionToken Токен подготовительной сессии
          *
          * @return void
          */
@@ -302,9 +300,32 @@
         }
 
         /**
+         * Выход пользователя по его токену
+         *
+         * @param string $token
+         * 
+         * @return bool
+         */
+        public function logout($token) {
+            if(is_string($token) && $token) {
+                $app = $this->config;
+
+                $app['token'] = $token;
+
+                if($res = $this->serverRequest('logout', $app)) {
+                    if($res = self::jsonDecodeStruct($res)) {
+                        return array_replace_recursive(array('data' => '', 'errors' => array(), 'notices' => array()), $res);
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /**
          * Получение данных пользователя по токену
          *
-         * @param $token
+         * @param string $token
          *
          * @return array|bool
          */
